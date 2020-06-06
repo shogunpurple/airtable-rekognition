@@ -1,30 +1,9 @@
 import AWS from "aws-sdk";
+import { globalConfig } from "@airtable/blocks";
 import axios from "axios";
 
-const REGION = "eu-west-2";
 
-AWS.config.update({
-  region: REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY,
-});
-
-const rekognition = new AWS.Rekognition();
-
-// async function fetchImage(url) {
-//   // await authenticate();
-//   const response = await fetch(url);
-//   const blob = await response.blob();
-
-//   const reader = new FileReader();
-//   return new Promise(resolve => {
-//     reader.onload = function() {
-//       resolve(this.result);
-//     }
-//     reader.readAsDataURL(blob);
-//   });
-// }
-function getBase64BufferFromURL(url) {
+async function getBase64BufferFromURL(url) {
   return axios
     .get(url, {
       responseType: "arraybuffer",
@@ -35,14 +14,22 @@ function getBase64BufferFromURL(url) {
     });
 }
 
-// async function authenticate() {
-//   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-//     IdentityPoolId: '',
-//   });
-// }
+function initRekognition() {
+  const REGION = globalConfig.get("awsRegion");
+  const ACCESS_KEY = globalConfig.get("accessKey");
+  const SECRET_KEY = globalConfig.get("secretKey");
+  AWS.region = REGION;
+  AWS.config.update({
+    region: REGION,
+    accessKeyId: ACCESS_KEY,
+    secretAccessKey: SECRET_KEY,
+  });
+  return new AWS.Rekognition();
+}
 
 export async function processImage(image) {
-  AWS.region = REGION;
+  const rekognition = initRekognition();
+
   const imageBytes = await getBase64BufferFromURL(image.url);
   var params = {
     Image: {

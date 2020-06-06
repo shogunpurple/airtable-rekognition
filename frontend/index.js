@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { globalConfig } from "@airtable/blocks";
 import {
   initializeBlock,
   useBase,
@@ -10,15 +11,60 @@ import {
   Heading,
   Text,
   Loader,
+  InputSynced,
 } from "@airtable/blocks/ui";
 import { processImage } from "../api/rekognition";
 
+function AWSSetupForm({ setConfigModalOpen }) {
+  return (
+    <Dialog
+      style={{
+        display: "grid",
+        gridGap: "10px",
+      }}
+      onClose={() => setConfigModalOpen(false)}
+      width="320px"
+    >
+      <Dialog.CloseButton />
+      <Heading>Configure API Keys</Heading>
+      <Text variant="paragraph">
+        You need to configure your AWS credentials before using the AWS
+        Rekognition API.
+      </Text>
+      <InputSynced globalConfigKey="awsRegion" placeholder="AWS Region" />
+      <InputSynced
+        globalConfigKey="accessKey"
+        placeholder="AWS Access Key ID"
+      />
+      <InputSynced
+        globalConfigKey="secretKey"
+        placeholder="AWS Secret Key ID"
+      />
+      <Button onClick={() => setConfigModalOpen(false)}>Close</Button>
+    </Dialog>
+  );
+}
+
 function ObjectDetectionBlock() {
-  // YOUR CODE GOES HERE
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const base = useBase();
   const table = base.getTableByName("Images");
   const records = useRecords(table);
+
+  useEffect(() => {
+    if (
+      !globalConfig.get("awsRegion") ||
+      !globalConfig.get("accessKey") ||
+      !globalConfig.get("secretKey")
+    ) {
+      setConfigModalOpen(true);
+    }
+  });
+
+  if (configModalOpen) {
+    return <AWSSetupForm setConfigModalOpen={setConfigModalOpen} />;
+  }
 
   return (
     <Box height="500px" border="thick" backgroundColor="lightGray1">
@@ -77,8 +123,8 @@ function RekognitionResultsDialog({ onClose, record }) {
           </Box>
 
           <Box style={{ marginBottom: 15 }}>
-             <Heading size="small">🔬 Object Detection</Heading>
-           {results.labels.map((label) => {
+            <Heading size="small">🔬 Object Detection</Heading>
+            {results.labels.map((label) => {
               return (
                 <span key={label.Name}>
                   <Label label={"Name"} value={label.Name} />
